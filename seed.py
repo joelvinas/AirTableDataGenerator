@@ -359,6 +359,8 @@ def phase_records(api, cfg, schema, log):
             tid, fm = lm[(label, t["key"])]
             rows = read_jsonl(label, t["key"])
             done = log["records"].setdefault("%s/%s" % (label, t["key"]), {})
+            log["failed_records"] = [e for e in log["failed_records"]
+                                     if not (e.get("phase") is None and e["base"] == label and e["table"] == t["name"] and e.get("key") in done)]
             todo = [r for r in rows if r["key"] not in done]
             print("records %-28s %4d to do (%d already logged)" % (t["name"], len(todo), len(rows) - len(todo)))
             pname = live_name(fm, t["primary"]) or t["primary"]
@@ -416,6 +418,9 @@ def phase_links(api, cfg, schema, log):
             ids = log["records"].get("%s/%s" % (label, t["key"]), {})
             done = log["links_done"].setdefault("%s/%s" % (label, t["key"]), [])
             doneset = set(done)
+            log["failed_records"] = [e for e in log["failed_records"]
+                                     if not (e.get("phase") == "links" and e["base"] == label and e["table"] == t["name"]
+                                             and set(e["keys"]) <= doneset)]
             todo = [r for r in rows if r["key"] not in doneset and r["key"] in ids]
             print("links   %-28s %4d records with links to set" % (t["name"], len(todo)))
             for i in range(0, len(todo), BATCH):
@@ -436,6 +441,10 @@ def phase_links(api, cfg, schema, log):
                 st, js = api.call("PATCH", "%s/v0/%s/%s" % (API, bid, tid), bid, {"records": recs})
                 if st == 200:
                     done.extend(r["key"] for r in chunk)
+                    gone = {r["key"] for r in chunk}
+                    log["failed_records"] = [e for e in log["failed_records"]
+                                             if not (e.get("phase") == "links" and e["base"] == label and e["table"] == t["name"]
+                                                     and set(e["keys"]) <= (doneset | gone))]
                 else:
                     log["failed_records"].append({"base": label, "table": t["name"], "phase": "links", "keys": [r["key"] for r in chunk], "why": err_text(js)})
                     print("  link batch failed in %s: %s" % (t["name"], err_text(js)))
