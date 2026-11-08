@@ -158,7 +158,7 @@ def main():
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--large-rows", type=int, default=1250, help="row count of the SalesItems table (1,200+ recommended)")
     ap.add_argument("--collab-count", type=int, default=3, help="number of distinct real collaborators you can supply at seed time")
-    ap.add_argument("--sanitize-legacy", action="store_true", help="rewrite the two legacy real-looking values (monarchmenswear.com emails, 'Loro Piana')")
+    ap.add_argument("--sanitize-legacy", action="store_true", help="rewrite real-looking emails to example.com")
     ap.add_argument("--out", default=os.path.join(HERE, "out"))
     a = ap.parse_args()
     cfg = {"seed": a.seed, "large_rows": a.large_rows, "collab_count": a.collab_count, "sanitize_legacy": a.sanitize_legacy}

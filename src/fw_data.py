@@ -208,8 +208,6 @@ def gen_itm(cfg, rows, plan):
         if i <= 20:
             lg = legacy[i - 1]
             nm = lg["Name"]
-            if cfg["sanitize_legacy"]:
-                nm = nm.replace("Loro Piana", "Lorenzo Pianelli")
             row = {"id": lg["id"], "Name": nm, "Style Interest Tags": json.loads(lg["Style Interest Tags"]),
                    "Cost": float(lg["Cost"]), "Price": float(lg["Price"])}
         else:

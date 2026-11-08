@@ -2,9 +2,28 @@
 
 Synthetic, fully fictional proxy for the Airtable -> Workfront Planning migrator. Python standard library only (Pillow is used for one optional JPEG if present). Output is deterministic (seed 20261108): two runs give byte-identical `out/`.
 
-Every email is `@example.com`, phones are `555-01xx`, names/companies are invented, and every generated PDF/PNG/SVG carries "SAMPLE - FICTIONAL DATA". The only exception is the 20 original rows' `@monarchmenswear.com` addresses, kept so the original ~20 records are preserved exactly. Use `--sanitize-legacy` to swap them to example.com (this breaks exact preservation of those values).
+Every email is `@example.com`, phones are `555-01xx`, names/companies are invented, and every generated PDF/PNG/SVG carries "SAMPLE - FICTIONAL DATA". The 20 original rows once carried a real-looking `@monarchmenswear.com` domain; I edited `legacy/` by hand to use `example.com`. A real luxury-brand name in one legacy item name was likewise replaced by hand, so no real company or domain remains in the data. (`generate.py --sanitize-legacy` applies the email replacement automatically if you start from the unedited originals.)
 
 This kit covers the **generation and ingestion** phase: build the data, load it into two trial Airtable bases, and check it landed. Extracting the bases with the migrator is the next phase and is outside this kit, except for `compare.py` and the answer key it compares against.
+
+## Purpose and provenance
+This is a personal, MIT-licensed project that reflects my interest in data-transfer and project-management tooling, alongside my graduate work as a Master's candidate in Computer Science (Data Science emphasis) at UMKC. It builds a test fixture for a tool that migrates Airtable bases into Workfront Planning.
+
+The business is fictional. The idea came from an Executive MBA case discussion of The Men's Wearhouse (Pfeffer, 2004, cited below). I invented "Fictional Fashionwear" as a luxury retailer and blended two UMKC courses to design the data: Principles of Big Data (COMP-SCI 5540) and Leadership and Organizations (MGT 5557). It has no affiliation with The Men's Wearhouse or any other real company. All names, contacts and data are invented.
+
+Source of the inspiration: Pfeffer, J. (2004). *The Men's Wearhouse: Success in a declining industry* (Revised ed.) (Case No. HR-5). Stanford Graduate School of Business.
+
+## Hand-made parts of the test
+Some parts are deliberately not automated. They are part of what the test checks, and they show where Airtable's API stops.
+- **Product photos.** Twenty product images (one per item) were generated with Gemini to suit the luxury-clothing theme. I uploaded them by hand to `Items.Product Photo`. The seeder's own file for each item is then appended, so each of those 20 cells holds two files (the photo first, the generated file second). That confirms uploads append rather than overwrite and keep upload order. These images are the one exception to the "SAMPLE - FICTIONAL DATA" watermark, since the kit did not make them. Use `out/live_attachments.csv` for what the cells really hold.
+- **The 5 MB file.** `over_5mb.png` is above the API's direct-upload limit, so it is uploaded through the Airtable UI (`out/attachments/manual_upload/`).
+- **`empty.txt` is rejected on purpose.** Airtable refuses 0-byte uploads (`BAD_REQUEST`), so 378 of the 379 generated files are present. The answer key marks the file as rejected, and the final `--check-attachments` run is expected to report only that file missing.
+- **`Field Type Showcase.Button`** cannot be created through the API. I created it by hand (name `Button`, URL formula `"https://example.com"` in double quotes).
+- **`Naming Edge Cases.total`** does not exist in the live base. Airtable rejects a field name that differs from another only by case, so the key lists it with `field_exists = no`.
+- **Single-record links.** The API cannot turn off "Allow linking to multiple records" or create one-way links, so those toggles are done in the app (listed as `SINGLE-LINK PREF` by `verify_live_schema.py`).
+- **CSV import.** Items, Purchase and SalesItems were loaded by CSV import to save API calls. The import changed some field types, and once left the last 249 `SalesItems.purchaseId` link cells empty (cause unknown, seen once). It is worth a second large linked table to investigate.
+
+Base IDs, the write token and the workspace ID live in `seed_config.json` (gitignored, never committed); see `seed_config.example.json`.
 
 ## Layout
 ```
