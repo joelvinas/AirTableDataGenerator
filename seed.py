@@ -158,6 +158,11 @@ def field_payload(f):
     return d
 
 
+def _fail(log, entry):
+    log["failed_fields"] = [e for e in log["failed_fields"] if (e["base"], e["table"], e["field"]) != (entry["base"], entry["table"], entry["field"])]
+    log["failed_fields"].append(entry)
+
+
 # ------------------------------------------------------------------ preflight
 def preflight(api, cfg, schema):
     if api.dry:
@@ -229,7 +234,7 @@ def phase_schema(api, cfg, schema, log):
                 if f["api"] in ("try",) or f.get("naming_try"):
                     st, js = api.call("POST", "%s/v0/meta/bases/%s/tables/%s/fields" % (API, bid, lt["id"]), bid, field_payload(f))
                     if st != 200:
-                        log["failed_fields"].append({"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
+                        _fail(log, {"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
                         print("  could not create %s.%s (%s): %s" % (t["name"], f["name"], f["type"], err_text(js)))
         save_log(log)
         # 3. link fields
@@ -246,7 +251,7 @@ def phase_schema(api, cfg, schema, log):
                     st, js = api.call("POST", "%s/v0/meta/bases/%s/tables/%s/fields" % (API, bid, lt["id"]), bid,
                                       {"name": f["name"], "type": "multipleRecordLinks", "options": {"linkedTableId": live[tgt["name"]]["id"]}})
                     if st != 200:
-                        log["failed_fields"].append({"base": label, "table": t["name"], "field": f["name"], "type": "multipleRecordLinks", "why": err_text(js)})
+                        _fail(log, {"base": label, "table": t["name"], "field": f["name"], "type": "multipleRecordLinks", "why": err_text(js)})
                         print("  link %s.%s failed: %s" % (t["name"], f["name"], err_text(js)))
                         continue
                     fld = js
@@ -260,7 +265,7 @@ def phase_schema(api, cfg, schema, log):
                     if not cur_inv or cur_inv[0]["name"] != want:
                         st, js = api.call("PATCH", "%s/v0/meta/bases/%s/tables/%s/fields/%s" % (API, bid, tt["id"], inv_id), bid, {"name": want})
                         if st != 200:
-                            log["failed_fields"].append({"base": label, "table": tgt["name"], "field": want, "type": "inverse rename", "why": err_text(js)})
+                            _fail(log, {"base": label, "table": tgt["name"], "field": want, "type": "inverse rename", "why": err_text(js)})
             print("  links done for %s" % t["name"])
         save_log(log)
         # 4. computed fields (all 'try')
@@ -282,17 +287,23 @@ def phase_schema(api, cfg, schema, log):
                     if k != "count":
                         tgt = [x for x in base["tables"] if x["key"] == t["by_name"][c["link"]]["link"]["target"]][0]
                         opt["fieldIdInLinkedTable"] = {x["name"]: x["id"] for x in live[tgt["name"]]["fields"]}.get(c["field"])
+                    if k == "rollup":
+                        opt["formula"] = "SUM(values)"      # API validation: options.formula is required for rollups
                     body["options"] = opt
-                elif k in ("created", "modified"):
-                    body["options"] = {"result": {"type": "dateTime", "options": {"dateFormat": {"name": "iso"}, "timeFormat": {"name": "24hour"}, "timeZone": "utc"}}}
-                    if k == "modified":
-                        body["options"]["referencedFieldIds"] = []
+                elif k == "modified":
+                    body["options"] = {"referencedFieldIds": []}   # API validation rejects 'result' here; [] = all fields
+                elif k == "created":
+                    pass                                        # API validation: createdTime takes no options
                 elif k == "button":
                     continue
                 st, js = api.call("POST", "%s/v0/meta/bases/%s/tables/%s/fields" % (API, bid, lt["id"]), bid, body)
                 if st != 200:
-                    log["failed_fields"].append({"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
+                    _fail(log, {"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
                     print("  computed %s.%s (%s) not created: %s" % (t["name"], f["name"], f["type"], err_text(js)))
+        save_log(log)
+        now = live_tables(api, bid)
+        log["failed_fields"] = [e for e in log["failed_fields"]
+                                if not (e["base"] == label and e["field"] in {f["name"] for f in now.get(e["table"], {}).get("fields", [])})]
         save_log(log)
     if not api.dry:
         print("\nschema phase finished. Failed/unsupported fields so far: %d (see seed_log.json 'failed_fields')." % len(log["failed_fields"]))
@@ -521,7 +532,9 @@ def phase_adopt(api, cfg, schema, log, names, with_links):
                             if len(bad) < 8:
                                 print("   link mismatch %s.%s: expected %s, live %s" % (r["key"], f, sorted(r["links"].get(f, [])), sorted(have)))
                     (good if ok else bad).append(r["key"])
-                print("   links: %d rows match, %d mismatch (target tables must be adopted/seeded first so IDs can be translated)" % (len(good), len(bad)))
+                print("   links: %d rows match, %d mismatch" % (len(good), len(bad)))
+                if bad and any(not log["records"].get("%s/%s" % (label, tmap[t["by_name"][f]["link"]["target"]]["key"])) for f in link_fields):
+                    print("   NOTE: a linked table has no logged record IDs yet; adopt or seed it first so link IDs can be translated")
                 log["links_done"]["%s/%s" % (label, t["key"])] = good
             save_log(log)
             if missing:
