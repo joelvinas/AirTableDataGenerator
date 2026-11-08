@@ -1,0 +1,11 @@
+{
+  "token": "PASTE_WRITE_TOKEN_HERE (scopes: data.records:read, data.records:write, schema.bases:read, schema.bases:write)",
+  "bases": {
+    "ff_main": "appXXXXXXXXXXXXXX",
+    "ff_ops": "appYYYYYYYYYYYYYY"
+  },
+  "trial_prefix": "TRIAL",
+  "requests_per_second": 4.5,
+  "collaborator_emails": [],
+  "workspace_id": "wspXXXXXXXXXXXXXX (only for --phase create-bases)"
+}

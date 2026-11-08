@@ -1,0 +1,21 @@
+id,Name,Style Interest Tags,Cost,Price,Margin
+itm_001,Executive Navy Double-Breasted Suit,"[""Bespoke Tailoring"", ""Classic Business""]",450.0,1450.0,0.69
+itm_002,Super 150s Wool Tuxedo,"[""Black Tie"", ""Silk Formalwear""]",600.0,1890.0,0.683
+itm_003,Milanese Fit Charcoal Suit,"[""Italian Cut"", ""Modern Fit""]",400.0,1250.0,0.68
+itm_004,Cashmere-Silk Blend Blazer,"[""Smart Casual"", ""Casual Luxury""]",350.0,1100.0,0.682
+itm_005,Loro Piana Wool Trench Coat,"[""Luxury Outerwear"", ""Heritage Wool""]",700.0,2200.0,0.682
+itm_006,Egyptian Cotton Spread-Collar Dress Shirt,"[""Classic Business"", ""Bespoke Tailoring""]",60.0,245.0,0.755
+itm_007,Silk Satin Bow Tie & Cummerbund Set,"[""Black Tie"", ""Silk Formalwear""]",45.0,185.0,0.757
+itm_008,Hand-Burnished Calfskin Oxford Shoes,"[""Classic Business"", ""Bespoke Tailoring""]",180.0,595.0,0.697
+itm_009,Merino Wool V-Neck Sweater,"[""Smart Casual"", ""Casual Luxury""]",90.0,295.0,0.695
+itm_010,Italian Silk Pocket Square,"[""Smart Casual"", ""Silk Formalwear""]",20.0,85.0,0.765
+itm_011,Unstructured Linen Summer Blazer,"[""Smart Casual"", ""Italian Cut""]",280.0,895.0,0.687
+itm_012,Velvet Dinner Jacket,"[""Black Tie"", ""Modern Fit""]",420.0,1350.0,0.689
+itm_013,Vicuña Overcoat,"[""Luxury Outerwear"", ""Casual Luxury""]",1500.0,4800.0,0.688
+itm_014,Custom Fit Poplin Tuxedo Shirt,"[""Black Tie"", ""Bespoke Tailoring""]",75.0,275.0,0.727
+itm_015,Suede Shearling Jacket,"[""Luxury Outerwear"", ""Smart Casual""]",650.0,1950.0,0.667
+itm_016,Pleated Wool-Mohair Trousers,"[""Italian Cut"", ""Classic Business""]",130.0,425.0,0.694
+itm_017,Alligator Leather Dress Belt,"[""Classic Business"", ""Casual Luxury""]",150.0,495.0,0.697
+itm_018,Seamless Cashmere Scarf,"[""Luxury Outerwear"", ""Casual Luxury""]",85.0,265.0,0.679
+itm_019,Handmade Silk Jacquard Tie,"[""Classic Business"", ""Silk Formalwear""]",40.0,145.0,0.724
+itm_020,Monk Strap Calfskin Loafers,"[""Smart Casual"", ""Italian Cut""]",200.0,645.0,0.69
