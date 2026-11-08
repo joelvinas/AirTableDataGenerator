@@ -481,14 +481,20 @@ def phase_adopt(api, cfg, schema, log, names, with_links):
             tid, fm = lm[(label, t["key"])]
             rows = read_jsonl(label, t["key"])
             pname = live_name(fm, t["primary"]) or t["primary"]
-            got, offset = {}, None
+            tmap = {x["key"]: x for x in schema["bases"][label]["tables"]}
+            link_fields = sorted({f for r in rows for f in r["links"]}) if with_links else []
+            got, live_links, offset = {}, {}, None
             while not api.dry:
-                q = "?pageSize=100&fields%5B%5D=" + urllib.parse.quote(pname) + ("&offset=" + offset if offset else "")
+                q = "?pageSize=100&fields%5B%5D=" + urllib.parse.quote(pname)
+                q += "".join("&fields%5B%5D=" + urllib.parse.quote(live_name(fm, f) or f) for f in link_fields)
+                q += ("&offset=" + offset if offset else "")
                 st, js = api.call("GET", "%s/v0/%s/%s%s" % (API, bid, tid, q), bid)
                 if st != 200:
                     raise Fatal("cannot read %s: %s" % (t["name"], err_text(js)))
                 for r in js["records"]:
-                    got[r["fields"].get(pname, "")] = r["id"]
+                    k = r["fields"].get(pname, "")
+                    got[k] = r["id"]
+                    live_links[k] = {f: r["fields"].get(live_name(fm, f) or f, []) for f in link_fields}
                 offset = js.get("offset")
                 if not offset:
                     break
@@ -501,7 +507,22 @@ def phase_adopt(api, cfg, schema, log, names, with_links):
                 print("   unexpected e.g.", extra[:5])
             log["records"]["%s/%s" % (label, t["key"])] = {k: v for k, v in got.items() if k in want}
             if with_links:
-                log["links_done"]["%s/%s" % (label, t["key"])] = [r["key"] for r in rows if r["key"] in got]
+                good, bad = [], []
+                for r in rows:
+                    if r["key"] not in got:
+                        continue
+                    ok = True
+                    for f in link_fields:
+                        tgt = tmap[t["by_name"][f]["link"]["target"]]
+                        rev = {v: k for k, v in log["records"].get("%s/%s" % (label, tgt["key"]), {}).items()}
+                        have = {rev.get(i, "?" + i) for i in live_links[r["key"]].get(f, [])}
+                        if have != set(r["links"].get(f, [])):
+                            ok = False
+                            if len(bad) < 8:
+                                print("   link mismatch %s.%s: expected %s, live %s" % (r["key"], f, sorted(r["links"].get(f, [])), sorted(have)))
+                    (good if ok else bad).append(r["key"])
+                print("   links: %d rows match, %d mismatch (target tables must be adopted/seeded first so IDs can be translated)" % (len(good), len(bad)))
+                log["links_done"]["%s/%s" % (label, t["key"])] = good
             save_log(log)
             if missing:
                 print("   NOTE: missing rows are not marked done; --phase records will upsert just those")
