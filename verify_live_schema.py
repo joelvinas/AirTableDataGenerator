@@ -3,7 +3,7 @@
 Run after `seed.py --phase schema` and the manual UI steps.  Reads the token from seed_config.json (never printed).
 Checks: missing/extra tables and fields, type mismatches, link target, prefersSingleRecordLink, inverse presence,
 leftover '__delete_me__' fields, select-choice drift.  Exit code 1 if anything is wrong."""
-import json, os, sys
+import argparse, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import seed
 
@@ -11,6 +11,9 @@ HERE = seed.HERE
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dump", action="store_true", help="only save the live schema to out/live_schema/<label>.live.json (no comparison)")
+    a = ap.parse_args()
     try:
         cfg = seed.load_config()
         api = seed.Api(cfg)
@@ -18,6 +21,15 @@ def main():
     except seed.Fatal as e:
         print("STOP:", e); sys.exit(2)
     bad = 0
+    if a.dump:
+        d = os.path.join(HERE, "out", "live_schema")
+        os.makedirs(d, exist_ok=True)
+        for label, bid in cfg["bases"].items():
+            tables = list(seed.live_tables(api, bid).values())
+            p = os.path.join(d, label + ".live.json")
+            json.dump({"tables": tables}, open(p, "w", encoding="utf-8"), indent=1)
+            print("saved %s (%d tables, %d fields)" % (p, len(tables), sum(len(t["fields"]) for t in tables)))
+        return
     for label, bid in cfg["bases"].items():
         exp = json.load(open(os.path.join(HERE, "out", "schema", label + ".schema.json"), encoding="utf-8"))
         live = seed.live_tables(api, bid)
