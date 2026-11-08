@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the whole proxy-base kit: schema JSON, CSVs, seed payloads, attachments and the answer key.
 
-    python generate.py                       # defaults
-    python generate.py --large-rows 1250 --collab-count 3 --out out
+    python src/generate.py                       # defaults
+    python src/generate.py --large-rows 1250 --collab-count 3 --out out
 Deterministic: same arguments -> byte-identical output (except Pillow-encoded JPEG, optional).
 """
 import argparse
@@ -14,8 +14,9 @@ import re
 import shutil
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+SRC = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SRC)
+HERE = os.path.dirname(SRC)                   # project root (this file lives in src/)
 
 import fw_compute as fc          # noqa: E402
 import fw_data                   # noqa: E402

@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import fw_files as ff
 from fw_common import CITIES, FIRST, LAST, STYLES, rng_for, slug
 
-LEGACY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "legacy")
+LEGACY = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "legacy")   # <root>/legacy
 EPOCH = datetime(2024, 1, 1)
 
 

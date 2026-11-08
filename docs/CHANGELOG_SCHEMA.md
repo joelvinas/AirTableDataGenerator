@@ -13,13 +13,19 @@
 | 8 | Link fields in legacy data are plain id text | Converted to real link fields resolved by the target's primary value |
 | 9 | Margin formula divides by zero when Price = 0 | Original `Margin` kept (still errors on Price 0 by design); `Margin Safe` variant added (BLANK when Price = 0); Price 0 rows itm_099/100 exercise both |
 
-Defects 7-9 are judgment calls; see ASSUMPTIONS.md.
+Defects 7-9 are judgment calls; see ASSUMPTIONS.md (same folder).
 
 ## Preserved
 All original ~20 rows per legacy table (values and keys) are kept; no existing table or field was renamed. `verify.py` checks this.
 
-## Added (full list in out/schema and COVERAGE.md)
+## Added (full list in out/schema and docs/COVERAGE.md)
 - ff_main: 27 new tables; legacy tables grew (Retail Locations 60, Sales Persons 80, Clients 150, Items 100, Purchase 200, SalesItems 1,250).
 - Field-type coverage (Field Type Showcase, 32 fields), data-quality lab (29 fields), naming edge cases (30 fields), Attachment Lab, Quota Stress Wide (124 fields: 25+ long text, 20+ formulas, 35+ links) with six Quota Parent tables.
 - ff_ops: second base with 6 tables whose names collide with ff_main (Retail Locations, Items, Style Glossary).
 - Select choices include a typecast-only value (`Zeta-New`).
+
+## Changes after the first live seed
+- Every link has a named inverse (see defect 3). ff_main is now 421 fields, ff_ops 29.
+- Computed-field options corrected for rollup, createdTime and lastModifiedTime creation.
+- `Naming Edge Cases.total` is recorded as rejected by Airtable and left out of `out/schema`.
+- `Attachment Lab` att_27 (zero-byte file) is recorded as rejected, so `Files` has null_count 2 and cardinality 28.

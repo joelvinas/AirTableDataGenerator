@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Offline self-check of the generated kit. Re-derives key facts by a different route than generate.py.
 
-    python verify.py            # exit code 1 if anything fails
+    python src/verify.py            # exit code 1 if anything fails
 """
 import csv
 import hashlib
@@ -9,8 +9,9 @@ import json
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+SRC = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SRC)
+HERE = os.path.dirname(SRC)                   # project root (this file lives in src/)
 OUT = os.path.join(HERE, "out")
 fails, passes = [], 0
 

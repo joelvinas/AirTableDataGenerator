@@ -36,11 +36,13 @@ Names are tables in `ff_main` unless noted. Row IDs are primary-field values. Th
 | Rollup over no links = 0; lookup over no links | Purchase, Showcase |
 | Typecast select adds a choice | Showcase 'Zeta-New' |
 | Observed fields (created/modified/createdBy/button) | Showcase |
-| Names: duplicates ignoring case, spaces, emoji, quotes, commas, very long | Naming Edge Cases (30 fields; unsupported names flagged `NAME_MAY_BE_REJECTED`) |
+| Names: duplicates ignoring case, spaces, emoji, quotes, commas, very long | Naming Edge Cases (30 fields; `total` confirmed rejected, other unsupported names flagged `NAME_MAY_BE_REJECTED`) |
 | Quota stress | Quota Stress Wide (124 fields), Quota Parent 1-6 |
 | Large table | SalesItems (1,250, configurable) |
 | Dates / date-times, time zones, extremes | Showcase, Data Quality Lab |
 | Collaborators | Showcase (needs `collaborator_emails` in seed_config.json) |
 
 ## Attachments (Attachment Lab, `Files` field; plus ID Photo etc. on Sales Persons)
-tiny (0-byte try, 27-37 B), small PNG/PDF/SVG/TXT/CSV, medium 300 KB and 1.5 MB, 4.5 MB (exact 4,500,000 B), over 5 MB (5,453,342 B, manual upload), same filename in several records (att_05/att_07), same filename twice in one cell, identical checksums across records (copy_a/b/c.png), odd filenames (unicode, symbols, no extension, dotfile, 255 chars), uppercase extension, mismatched extension/MIME (looks_like.jpg), cells of 0, 1 and 3+ files (many_00.txt cell). Optional JPEG if Pillow is present.
+tiny (27-37 B) and one 0-byte file that Airtable rejects (att_27, `seed_method = rejected`), small PNG/PDF/SVG/TXT/CSV, medium 300 KB and 1.5 MB, 4.5 MB (exact 4,500,000 B), over 5 MB (5,453,342 B, manual upload), same filename in several records (att_05/att_07), same filename twice in one cell, identical checksums across records (copy_a/b/c.png), odd filenames (unicode, symbols, no extension, dotfile, 255 chars), uppercase extension, mismatched extension/MIME (looks_like.jpg), cells of 0, 1 and 3+ files (many_00.txt cell). Optional JPEG if Pillow is present.
+
+Mixed cells (added during the live test): 20 `Items.Product Photo` cells hold a hand-uploaded `.jfif` photo at position 1 plus our generated file at position 2. See `out/live_attachments.csv`.

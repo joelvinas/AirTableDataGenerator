@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare the migrator's exports with the answer key.  Plain python, tolerant of header names.
 
-    python compare.py --profile migrator_profile.csv --load-order migrator_load_order.csv [--mode resolve|literal] [--base ff_main]
+    python src/compare.py --profile migrator_profile.csv --load-order migrator_load_order.csv [--mode resolve|literal] [--base ff_main]
 Expected migrator headers (case/space/underscore-insensitive; aliases accepted):
   profile:    table, field, row_count, null_count, cardinality   (optional: base)
   load order: table, load_no (or step/order)                      (optional: base, depth)
@@ -9,7 +9,7 @@ Rows are matched by (table, field).  Real IDs are not needed.  Rows flagged OBSE
 are reported as 'soft' (informational) instead of failures."""
 import argparse, csv, os, re, sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # project root (this file lives in src/)
 KEY = os.path.join(HERE, "out", "answer_key")
 ALIAS = {"table": ["table", "tablename", "table_name"], "field": ["field", "fieldname", "field_name", "column"],
          "row_count": ["rowcount", "rows", "records", "recordcount", "total"], "null_count": ["nullcount", "nulls", "null"],

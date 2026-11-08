@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Seed the TRIAL Airtable bases through the Web API (standard library only).
 
-    python seed.py --phase preflight          # token + base-name safety check, no writes
-    python seed.py --phase schema             # tables, fields, link fields (+ renames inverse fields), computed fields
-    ... do the manual UI steps in out/reports/manual_steps.md, then `python verify_live_schema.py` ...
-    python seed.py --phase records            # idempotent upserts keyed on each table's primary field
-    python seed.py --phase links              # second pass: link cells via the local-key -> record-id map
-    python seed.py --phase attachments        # uploadAttachment, one request per file
-    python seed.py --phase all                # everything above in order
-    python seed.py --dry-run --phase all      # offline: counts of requests, no network
+    python src/seed.py --phase preflight          # token + base-name safety check, no writes
+    python src/seed.py --phase schema             # tables, fields, link fields (+ renames inverse fields), computed fields
+    ... do the manual UI steps in out/reports/manual_steps.md, then `python src/verify_live_schema.py` ...
+    python src/seed.py --phase records            # idempotent upserts keyed on each table's primary field
+    python src/seed.py --phase links              # second pass: link cells via the local-key -> record-id map
+    python src/seed.py --phase attachments        # uploadAttachment, one request per file
+    python src/seed.py --phase all                # everything above in order
+    python src/seed.py --dry-run --phase all      # offline: counts of requests, no network
 
 Safety: reads the WRITE token only from seed_config.json (gitignored). The token is never printed or logged.
 It refuses to touch any base whose name does not start with the trial prefix (default "TRIAL").
@@ -28,8 +28,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+SRC = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SRC)
+HERE = os.path.dirname(SRC)                   # project root (this file lives in src/)
 from fw_schema import build_schema  # noqa: E402
 
 OUT = os.path.join(HERE, "out")

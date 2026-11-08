@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Delete every record in the seeded TRIAL bases (10 per request). Tables/fields stay: Airtable has no table-delete API.
 
-    python teardown.py --dry-run
-    python teardown.py --yes
+    python src/teardown.py --dry-run
+    python src/teardown.py --yes
 Same safety rules as seed.py: write token only from seed_config.json, base name must start with the trial prefix.
 Also removes seed_log.json record/link/attachment state so the next seed starts clean.
 """

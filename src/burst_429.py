@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """OPTIONAL. Deliberately exceed 5 req/s on ONE trial base to provoke an HTTP 429 for testing the migrator's backoff.
 
-    python burst_429.py --yes [--table "Retail Locations"] [--threads 12] [--seconds 6]
+    python src/burst_429.py --yes [--table "Retail Locations"] [--threads 12] [--seconds 6]
 Read-only (GET list, pageSize=1). Airtable then blocks that base for ~30 s; never run it while a seed or migration is running.
 
 Testing a 403: use the MIGRATOR's read-only token (not the write token) against (a) a base it was not granted, or

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Summarise seed_log.json: failed records/link batches and failed field creations, grouped by table and reason.
-    python show_failures.py"""
+    python src/show_failures.py"""
 import collections, json, os
-p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_log.json")
+p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "seed_log.json")   # <root>/seed_log.json
 l = json.load(open(p, encoding="utf-8"))
 g = collections.Counter()
 for r in l.get("failed_records", []):

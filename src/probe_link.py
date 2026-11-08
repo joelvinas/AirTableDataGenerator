@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Diagnose one failing link field. Shows the live field definition and tries ONE record, printing Airtable's full reply.
-    python probe_link.py "Items" "Collection" [--base ff_main] [--typecast] [--row N]
+    python src/probe_link.py "Items" "Collection" [--base ff_main] [--typecast] [--row N]
 Costs ~3 calls. Writes the same value the link pass would write (one record), nothing else. Token is never printed."""
 import argparse, json, os, sys, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +22,12 @@ try:
     live = seed.live_tables(api, bid)
     lt = live[a.table]
     fld = [f for f in lt["fields"] if f["name"] == a.field][0]
-    print("LIVE FIELD:", json.dumps(fld, indent=1))
+    show = json.loads(json.dumps(fld))
+    ch = show.get("options", {}).get("choices")
+    if ch and len(ch) > 4:
+        show["options"]["choices"] = ch[:3] + ["... %d choices in total, first 3 shown" % len(ch)]
+    print("LIVE FIELD TYPE:", fld["type"])
+    print("LIVE FIELD:", json.dumps(show, indent=1))
     tgt = tmap[t["by_name"][a.field]["link"]["target"]]
     print("expected target table:", tgt["name"], "->", live[tgt["name"]]["id"])
     ids = log["records"].get("%s/%s" % (a.base, t["key"]), {})
