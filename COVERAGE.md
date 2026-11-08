@@ -9,11 +9,11 @@ Names are tables in `ff_main` unless noted. Row IDs are primary-field values. Th
 | Link from outside into a cycle | Items.Collection (Items sits at depth 1) |
 | Self-link (clean) | Clients.Referred By, Employees.Reports To; emp_001 links to itself |
 | Mutual self-links | cli_022 <-> cli_023, emp_050 <-> emp_051; cli_021 self-referral |
-| Many-to-many pair (stays a cycle in resolve mode) | Lookbooks <-> Style Tags |
+| Many-to-many pair (stays a cycle in resolve mode) | Lookbooks <-> Style Tags; Purchase.salesPersonId <-> Sales Persons.Sold Purchases (up to 2 people per purchase) |
 | Single-record hint resolves a pair | Campaigns / Campaign Tasks (Campaign Tasks depth 1) |
 | Both sides single (ambiguous cycle) | Suppliers <-> Supplier Contracts |
 | Two links, same target table | Special Orders.Billing Store + Shipping Store -> Retail Locations |
-| Diamond | Purchase -> Clients, Sales Persons (both lead to Retail Locations) |
+| Diamond-like shape | Purchase and Sales Persons (a 2-table cycle) both lead to Retail Locations; Purchase also links to Clients |
 | Chain depth 6 | Clients -> Purchase -> SalesItems -> Returns -> Return Inspections -> Restock Orders |
 | No links | Style Glossary |
 | Name collisions across bases | ff_ops Retail Locations, Items, Style Glossary |

@@ -96,11 +96,11 @@ def base_main():
         TXT("Format Label", note="near-duplicate case variants of Mall/Freestanding"),
         DATE("Opened"), NUM("Square Footage"), F("Phone", "phoneNumber"), F("Store Email", "email"),
         LONG("Store Hours"),
-        LINK("Store Manager", "mgr", single=True, inverse=None, cover="2-cycle Stores<->Store Managers (one-way both sides)"),
+        LINK("Store Manager", "mgr", single=True, inverse="Managed Locations", cover="2-cycle Stores<->Store Managers (each side single, each with its own inverse)"),
     ], 60))
     t.append(T("mgr", "Store Managers", "ff_main", [
         TXT("Manager ID"), TXT("Name"), F("Email", "email"), F("Phone", "phoneNumber"),
-        LINK("Home Store", "loc", single=True, inverse=None),
+        LINK("Home Store", "loc", single=True, inverse="Home Store Managers"),
         F("Regional Lead", "singleCollaborator"), DATE("Hired"),
         SEL("Salary Band", ["L1", "L2", "L3", "L4"]),
     ], 60))
@@ -115,7 +115,7 @@ def base_main():
         LINK("Home Store", "loc", single=True, inverse="Clients"),
         MSEL("Style Interests", STYLES),
         F("Email", "email"), F("Phone", "phoneNumber"), TXT("ZIP"),
-        LINK("Referred By", "cli", single=True, inverse=None, cover="self-link"),
+        LINK("Referred By", "cli", single=True, inverse="Referrals", cover="self-link"),
         ATTACH("Logo"), DATE("Birthday"), SEL("VIP Tier", ["Bronze", "Silver", "Gold", "Platinum"]),
         F("Joined", "createdTime", {}, calc={"kind": "created"}),
         LONG("Notes"), CHK("Newsletter"),
@@ -127,13 +127,13 @@ def base_main():
           calc={"kind": "formula", "fn": margin, "result": "number"}, note="divide-by-zero when Price is 0/blank"),
         F("Margin Safe", "formula", {"formula": "IF({Price}=0,BLANK(),ROUND(({Price}-{Cost})/{Price},3))"},
           calc={"kind": "formula", "fn": margin_safe, "result": "number"}),
-        LINK("Collection", "col", single=True, inverse=None, cover="link into a 3-cycle from outside"),
+        LINK("Collection", "col", single=True, inverse="Items", cover="link into a 3-cycle from outside"),
         ATTACH("Product Photo"), F("Description", "richText"), F("SKU", "barcode"), CHK("In Stock"),
     ], 100))
     t.append(T("pur", "Purchase", "ff_main", [
         TXT("id"),
         LINK("clientId", "cli", single=True, inverse="Purchases"),
-        LINK("salesPersonId", "rep", single=False, inverse=None, cover="multi-value one-way link"),
+        LINK("salesPersonId", "rep", single=False, inverse="Sold Purchases", cover="multi-value pair where neither side is single (stays a cycle)"),
         F("Total", "rollup", {}, calc={"kind": "rollup", "link": "Line Items", "field": "Price", "agg": "SUM"}),
         ATTACH("Receipt"), DT("Purchased At"),
         SEL("Channel", ["In-Store", "Online", "Phone", "Trunk Show"]), LONG("Notes"),
@@ -152,16 +152,16 @@ def base_main():
     ], 1250))
     t.append(T("col", "Collections", "ff_main", [
         TXT("Collection"), SEL("Season", ["Spring/Summer", "Fall/Winter", "Resort", "Pre-Fall"]),
-        LINK("Lead Designer", "dsg", single=True, inverse=None, cover="3-cycle Collections->Designers->Ateliers->Collections"),
+        LINK("Lead Designer", "dsg", single=True, inverse="Led Collections", cover="3-cycle Collections->Designers->Ateliers->Collections"),
         DATE("Launch"),
     ], 12))
     t.append(T("dsg", "Designers", "ff_main", [
         TXT("Designer"), F("Email", "email"),
-        LINK("Home Atelier", "atl", single=True, inverse=None),
+        LINK("Home Atelier", "atl", single=True, inverse="Resident Designers"),
     ], 12))
     t.append(T("atl", "Ateliers", "ff_main", [
         TXT("Atelier"), TXT("City"),
-        LINK("Signature Collection", "col", single=True, inverse=None),
+        LINK("Signature Collection", "col", single=True, inverse="Signature Of Ateliers"),
     ], 8))
     t.append(T("lb", "Lookbooks", "ff_main", [
         TXT("Lookbook"), SEL("Season", ["Spring/Summer", "Fall/Winter", "Resort", "Pre-Fall"]),
@@ -186,7 +186,7 @@ def base_main():
         LINK("Client", "cli", single=True, inverse="Special Orders"),
         LINK("Billing Store", "loc", single=True, inverse="Billed Special Orders",
              cover="two link fields to the same parent (Billing/Shipping Store)"),
-        LINK("Shipping Store", "loc", single=True, inverse=None),
+        LINK("Shipping Store", "loc", single=True, inverse="Shipped Special Orders"),
         CHK("Rush"), DATE("Due Date"),
     ], 60))
     t.append(T("ret", "Returns", "ff_main", [
@@ -204,7 +204,7 @@ def base_main():
     t.append(T("emp", "Employees", "ff_main", [
         TXT("Employee ID"), TXT("Name"), TXT("Title"), F("Email", "email"), F("Phone", "phoneNumber"), DATE("Hire Date"),
         NUM("Org Level"),
-        LINK("Reports To", "emp", single=True, inverse=None, cover="self-link, 6-level org chart"),
+        LINK("Reports To", "emp", single=True, inverse="Direct Reports", cover="self-link, 6-level org chart"),
         LINK("Works At", "loc", single=True, inverse="Staff"),
     ], 100))
     t.append(T("glo", "Style Glossary", "ff_main", [
@@ -340,7 +340,7 @@ def base_ops():
     ], 80))
     t.append(T("sln", "Shipment Lines", "ff_ops", [
         TXT("Line"), LINK("Shipment", "shp", single=True, inverse="Lines"),
-        LINK("Item", "itm2", single=True, inverse=None), NUM("Qty"),
+        LINK("Item", "itm2", single=True, inverse="Shipment Lines"), NUM("Qty"),
     ], 150))
     return t
 

@@ -28,7 +28,7 @@ Size: ff_main 33 tables / 411 fields / ~2,900 rows (SalesItems = 1,250, change w
 3. `cp seed_config.example.json seed_config.json` and fill in base IDs and your **write** token (scopes: data.records:read/write, schema.bases:read/write). The file is gitignored; the token is never printed or logged (`seed_calls.log` holds method/path/status only).
 4. `python seed.py --dry-run --phase all` (shows request counts, no network).
 5. `python seed.py --phase preflight` (refuses any base whose name does not start with the trial prefix).
-6. `python seed.py --phase schema`, then do the manual UI steps in `out/reports/manual_steps.md` (turn off "Allow linking to multiple records", delete flagged inverse fields, create anything listed in `seed_log.json` -> `failed_fields`), then `python verify_live_schema.py` until clean.
+6. `python seed.py --phase schema`, then do the manual UI steps in `out/reports/manual_steps.md` (turn off "Allow linking to multiple records" where listed; **never delete an inverse link field**, because Airtable then converts the other side of the pair to plain text; create anything listed in `seed_log.json` -> `failed_fields`), then `python verify_live_schema.py` until clean.
 7. `python seed.py --phase records`, `--phase links`, `--phase attachments` (or `--phase all`). Safe to stop and re-run: records upsert on the primary field, and `seed_log.json` tracks progress.
 8. Upload `out/attachments/manual_upload/*` by hand (over the 5 MB API limit).
 9. Run the migrator (separate read-only token). Compare with `compare.py`.

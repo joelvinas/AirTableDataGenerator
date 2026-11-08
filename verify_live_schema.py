@@ -53,7 +53,7 @@ def main():
                     if live_target(live, lo) != etid.get(eo["linkedTableId"]):
                         print("LINK TARGET %s.%s differs" % (et["name"], f["name"])); bad += 1
                     if bool(eo.get("inverseLinkFieldId")) != bool(lo.get("inverseLinkFieldId")):
-                        print("INVERSE PRESENCE %s.%s expected %s (manual UI step to delete inverse for one-way links)" % (et["name"], f["name"], bool(eo.get("inverseLinkFieldId")))); bad += 1
+                        print("INVERSE PRESENCE %s.%s: inverse link field expected present=%s. Do NOT delete inverse fields: Airtable converts the other side to text" % (et["name"], f["name"], bool(eo.get("inverseLinkFieldId")))); bad += 1
                 if f["type"] in ("singleSelect", "multipleSelects"):
                     ec = [c["name"] for c in f["options"]["choices"]]
                     lc = [c["name"] for c in x["options"]["choices"]]
