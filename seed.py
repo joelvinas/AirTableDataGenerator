@@ -25,6 +25,7 @@ import re
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -470,6 +471,42 @@ def phase_attachments(api, cfg, schema, log):
     print("attachments uploaded this run: %d" % n_done)
 
 
+# ------------------------------------------------------------------ phase: adopt (table loaded by hand, e.g. CSV import)
+def phase_adopt(api, cfg, schema, log, names, with_links):
+    lm = live_map(api, cfg, schema, log)
+    for label, bid in cfg["bases"].items():
+        for t in schema["bases"][label]["tables"]:
+            if t["name"] not in names:
+                continue
+            tid, fm = lm[(label, t["key"])]
+            rows = read_jsonl(label, t["key"])
+            pname = live_name(fm, t["primary"]) or t["primary"]
+            got, offset = {}, None
+            while not api.dry:
+                q = "?pageSize=100&fields%5B%5D=" + urllib.parse.quote(pname) + ("&offset=" + offset if offset else "")
+                st, js = api.call("GET", "%s/v0/%s/%s%s" % (API, bid, tid, q), bid)
+                if st != 200:
+                    raise Fatal("cannot read %s: %s" % (t["name"], err_text(js)))
+                for r in js["records"]:
+                    got[r["fields"].get(pname, "")] = r["id"]
+                offset = js.get("offset")
+                if not offset:
+                    break
+            want = {r["key"] for r in rows}
+            missing, extra = sorted(want - set(got)), sorted(set(got) - want)
+            print("adopt %-24s live %d, expected %d, missing %d, unexpected %d" % (t["name"], len(got), len(want), len(missing), len(extra)))
+            if missing[:5]:
+                print("   missing e.g.", missing[:5])
+            if extra[:5]:
+                print("   unexpected e.g.", extra[:5])
+            log["records"]["%s/%s" % (label, t["key"])] = {k: v for k, v in got.items() if k in want}
+            if with_links:
+                log["links_done"]["%s/%s" % (label, t["key"])] = [r["key"] for r in rows if r["key"] in got]
+            save_log(log)
+            if missing:
+                print("   NOTE: missing rows are not marked done; --phase records will upsert just those")
+
+
 # ------------------------------------------------------------------ optional: create the two trial bases by API
 def phase_create_bases(api, cfg, schema):
     ws = cfg.get("workspace_id")
@@ -486,8 +523,10 @@ def phase_create_bases(api, cfg, schema):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--phase", required=True, choices=["preflight", "create-bases", "schema", "records", "links", "attachments", "all"])
+    ap.add_argument("--phase", default="adopt", choices=["preflight", "create-bases", "schema", "records", "links", "attachments", "all"])
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--adopt", nargs="+", metavar="TABLE", help="tables you loaded by hand (e.g. CSV import); records the IDs and skips them")
+    ap.add_argument("--adopt-links", action="store_true", help="the imported CSV also filled the link columns, so skip the link pass for adopted tables")
     ap.add_argument("--only-base", choices=["ff_main", "ff_ops"])
     a = ap.parse_args()
     try:
@@ -508,6 +547,12 @@ def main():
         preflight(api, cfg, schema)
         if a.phase == "preflight":
             return
+        if a.phase == "adopt" and not a.adopt:
+            raise Fatal("--phase adopt needs --adopt TABLE [TABLE...]")
+        if a.adopt:
+            phase_adopt(api, cfg, schema, log, set(a.adopt), a.adopt_links)
+            if a.phase == "adopt":
+                return
         if a.phase in ("schema", "all"):
             phase_schema(api, cfg, schema, log)
         if a.phase in ("records", "all"):
