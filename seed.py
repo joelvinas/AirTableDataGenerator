@@ -550,6 +550,86 @@ def phase_adopt(api, cfg, schema, log, names, with_links):
                 print("   NOTE: missing rows are not marked done; --phase records will upsert just those")
 
 
+# ------------------------------------------------------------------ check attachments already present (manual uploads, earlier runs)
+def phase_check_attachments(api, cfg, schema, log, accept_existing=False):
+    lm = live_map(api, cfg, schema, log)
+    man = json.load(open(os.path.join(OUT, "attachments", "manifest.json"), encoding="utf-8"))
+    tot = {"expected": 0, "present": 0, "missing": 0, "extra": 0, "accepted_as_yours": 0}
+    live_rows = []
+    for label, bid in cfg["bases"].items():
+        groups = {}
+        for m in man:
+            if m["base"] == label:
+                groups.setdefault((m["table_key"], m["table"]), []).append(m)
+        for (tkey, tname), items in groups.items():
+            tid, fm = lm[(label, tkey)]
+            t = [x for x in schema["bases"][label]["tables"] if x["key"] == tkey][0]
+            pname = live_name(fm, t["primary"]) or t["primary"]
+            fields = sorted({m["field"] for m in items})
+            live = {}
+            offset = None
+            while not api.dry:
+                q = "?pageSize=100&fields%5B%5D=" + urllib.parse.quote(pname)
+                q += "".join("&fields%5B%5D=" + urllib.parse.quote(live_name(fm, f) or f) for f in fields)
+                q += ("&offset=" + offset if offset else "")
+                st, js = api.call("GET", "%s/v0/%s/%s%s" % (API, bid, tid, q), bid)
+                if st != 200:
+                    raise Fatal("cannot read %s: %s" % (tname, err_text(js)))
+                for r in js["records"]:
+                    live[r["fields"].get(pname, "")] = r["fields"]
+                offset = js.get("offset")
+                if not offset:
+                    break
+            present = missing = extra = 0
+            notes = []
+            cells = {}
+            for m in items:
+                cells.setdefault((m["row"], m["field"]), []).append(m)
+            for (row, field), exp in sorted(cells.items()):
+                atts = live.get(row, {}).get(live_name(fm, field) or field, [])
+                have = [(a.get("filename"), a.get("size")) for a in atts]
+                matched_names = set()
+                user_cell = bool(accept_existing and atts)
+                for m in sorted(exp, key=lambda x: x["order"]):
+                    k = "%s|%s|%s|%d" % (m["table_key"], m["row"], m["field"], m["order"])
+                    if (m["filename"], m["size"]) in have:
+                        have.remove((m["filename"], m["size"]))
+                        matched_names.add((m["filename"], m["size"]))
+                        log["attachments_done"][k] = True
+                        present += 1
+                    elif user_cell:
+                        log["attachments_done"][k] = True      # cell already holds files you supplied: do not add ours
+                        tot["accepted_as_yours"] += 1
+                    else:
+                        log["attachments_done"].pop(k, None)
+                        missing += 1
+                        if len(notes) < 6:
+                            notes.append("missing %s %s: %s (%s bytes, method %s)" % (row, field, m["filename"][:40], m["size"], m["method"]))
+                for pos, a in enumerate(atts, 1):
+                    live_rows.append({"base": label, "table": tname, "record": row, "field": field, "position_in_cell": pos, "filename": a.get("filename"),
+                                      "size": a.get("size"), "type": a.get("type"), "attachment_id": a.get("id"),
+                                      "matches_generated_file": "yes" if (a.get("filename"), a.get("size")) in matched_names else "no"})
+                if have and not user_cell:
+                    extra += len(have)
+                    if len(notes) < 6:
+                        notes.append("extra   %s %s: %s" % (row, field, ", ".join("%s (%s)" % (f[0][:30], f[1]) for f in have[:3])))
+            print("attach %-24s expected %4d, present %4d, missing %4d, extra %3d" % (tname, len(items), present, missing, extra))
+            for n in notes:
+                print("   " + n)
+            tot["expected"] += len(items); tot["present"] += present; tot["missing"] += missing; tot["extra"] += extra
+            save_log(log)
+    if live_rows:
+        import csv as _csv
+        p = os.path.join(OUT, "live_attachments.csv")
+        with open(p, "w", newline="", encoding="utf-8") as fh:
+            w = _csv.DictWriter(fh, fieldnames=list(live_rows[0]))
+            w.writeheader(); w.writerows(live_rows)
+        print("wrote %s (%d live attachments; source of truth for cells you supplied yourself)" % (p, len(live_rows)))
+    print("attachment check totals:", tot)
+    print("Present files are logged as done, so --phase attachments uploads only the missing ones (methods 'manual' are never uploaded).")
+    print("'extra' means more files in a cell than expected (e.g. duplicates): remove them in the app.")
+
+
 # ------------------------------------------------------------------ optional: create the two trial bases by API
 def phase_create_bases(api, cfg, schema):
     ws = cfg.get("workspace_id")
@@ -570,6 +650,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--adopt", nargs="+", metavar="TABLE", help="tables you loaded by hand (e.g. CSV import); records the IDs and skips them")
     ap.add_argument("--adopt-links", action="store_true", help="the imported CSV also filled the link columns, so skip the link pass for adopted tables")
+    ap.add_argument("--check-attachments", action="store_true", help="compare live attachment cells with the manifest and log what is already there")
+    ap.add_argument("--accept-existing", action="store_true", help="with --check-attachments: a cell that already holds any file is treated as supplied by you; none of ours is added to it")
     ap.add_argument("--only-base", choices=["ff_main", "ff_ops"])
     a = ap.parse_args()
     try:
@@ -585,6 +667,9 @@ def main():
         api = Api(cfg, dry=a.dry_run)
         schema = build_schema()
         log = load_log()
+        if a.check_attachments:
+            preflight(api, cfg, schema)
+            return phase_check_attachments(api, cfg, schema, log, a.accept_existing)
         if a.phase == "create-bases":
             return phase_create_bases(api, cfg, schema)
         preflight(api, cfg, schema)
