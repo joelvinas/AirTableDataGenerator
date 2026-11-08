@@ -126,7 +126,8 @@ def profile(schema, raw, norm, att):
     """Rows for expected_profile.csv."""
     att_cells = {}
     for a in att:
-        att_cells.setdefault((a["table"], a["row"], a["field"]), []).append(a)
+        if a["method"] != "rejected":              # files Airtable refuses to store never appear in a cell
+            att_cells.setdefault((a["table"], a["row"], a["field"]), []).append(a)
     out = []
     for b in schema["bases"].values():
         for t in b["tables"]:
@@ -147,6 +148,9 @@ def profile(schema, raw, norm, att):
                         flags.append("HAS_MANUAL_UPLOAD")
                     if any(a["method"] == "try" for c in cells for a in c):
                         flags.append("HAS_TRY_UPLOAD")
+                    if any(a["method"] == "rejected" and (a["table"], a["field"]) == (t["key"], name) for a in att):
+                        flags.append("HAS_REJECTED_UPLOAD")
+                        notes.append("a file Airtable rejects (zero bytes) is listed in expected_attachments.csv as seed_method=rejected; its cell stays empty, which is counted in null_count")
                 elif calc and calc["kind"] in OBSERVED:
                     null = 0 if calc["kind"] != "button" else ""
                     card = ""
@@ -236,8 +240,10 @@ def profile(schema, raw, norm, att):
                     flags.append("API_CREATE_UNVERIFIED")
                 if api == "manual" and not (lk and lk["is_inverse"]):
                     flags.append("API_CREATE_MANUAL")
-                exists = "maybe" if f.get("naming_try") else "yes"
-                if f.get("naming_try"):
+                exists = "no" if f.get("confirmed_rejected") else ("maybe" if f.get("naming_try") else "yes")
+                if f.get("confirmed_rejected"):
+                    flags.append("NAME_REJECTED_BY_AIRTABLE")
+                elif f.get("naming_try"):
                     flags.append("NAME_MAY_BE_REJECTED")
                 if f.get("note"):
                     notes.append(f["note"])

@@ -231,7 +231,7 @@ def phase_schema(api, cfg, schema, log):
             for f in t["fields"]:
                 if f.get("link") or f.get("calc") or f["name"] in have:
                     continue
-                if f["api"] in ("ok", "try") or f.get("naming_try"):   # also re-creates plain fields deleted later
+                if (f["api"] in ("ok", "try") or f.get("naming_try")) and not f.get("confirmed_rejected"):   # also re-creates plain fields deleted later
                     st, js = api.call("POST", "%s/v0/meta/bases/%s/tables/%s/fields" % (API, bid, lt["id"]), bid, field_payload(f))
                     if st != 200:
                         _fail(log, {"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
@@ -461,7 +461,7 @@ def phase_attachments(api, cfg, schema, log):
     for m in man:
         if m["base"] not in cfg["bases"]:
             continue
-        if m["method"] == "manual":
+        if m["method"] in ("manual", "rejected"):
             continue
         k = "%s|%s|%s|%d" % (m["table_key"], m["row"], m["field"], m["order"])
         if k in log["attachments_done"]:
@@ -559,7 +559,7 @@ def phase_check_attachments(api, cfg, schema, log, accept_existing=False):
     for label, bid in cfg["bases"].items():
         groups = {}
         for m in man:
-            if m["base"] == label:
+            if m["base"] == label and m["method"] != "rejected":
                 groups.setdefault((m["table_key"], m["table"]), []).append(m)
         for (tkey, tname), items in groups.items():
             tid, fm = lm[(label, tkey)]

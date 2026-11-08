@@ -46,6 +46,8 @@ def api_schema(base):
     for t in base["tables"]:
         fields = []
         for f in t["fields"]:
+            if f.get("confirmed_rejected"):
+                continue                      # Airtable cannot create it; the answer key still lists it as field_exists=no
             o = json.loads(json.dumps(f["options"]))
             lk, c = f.get("link"), f.get("calc")
             if lk:

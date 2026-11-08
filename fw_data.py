@@ -633,7 +633,7 @@ def gen_attlab(cfg, rows, plan):
     S(24, "uppercase extension", [("PHOTO.PNG", ff.png_gradient(200, 80, (120, 40, 40)))])
     S(25, "double extension gz", [("archive.tar.gz", ff.gz(ff.txt("archive")))])
     S(26, "extension/MIME mismatch (png bytes named .jpg)", [("looks_like.jpg", ff.png_gradient(200, 80, (40, 120, 40)))], note="contentType sent as image/jpeg")
-    S(27, "zero-byte file", [("empty.txt", b"")], method="try", note="Airtable may reject empty files")
+    S(27, "zero-byte file", [("empty.txt", b"")], method="rejected", note="Airtable rejects empty files (BAD_REQUEST, confirmed live 2026-11-08); the cell stays empty")
     jp = ff.jpeg(28, "lab jpeg")
     S(28, "real JPEG (Pillow only)", [("photo.jpg", jp)] if jp else [], note="skipped when Pillow is not installed")
     S(29, "12 files in one cell", [("many_%02d.txt" % k, ff.txt("many %d" % k)) for k in range(12)])

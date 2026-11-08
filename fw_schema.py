@@ -270,7 +270,7 @@ LONG_255 = ("Long Field Name " + "X" * 239)[:255]
 def naming_edge():
     fs = [
         TXT("Case ID"),
-        TXT("Total"), TXT("total", naming_try=True, note="case-only duplicate: Airtable requires unique names ignoring case"),
+        TXT("Total"), TXT("total", naming_try=True, confirmed_rejected=True, note="case-only duplicate of Total: Airtable rejects it (confirmed live 2026-11-08), so the field does not exist"),
         TXT("Trailing Space"), TXT("Trailing Space ", naming_try=True, note="trailing space: likely trimmed/rejected"),
         TXT("Zero​Width", naming_try=True), TXT("Non Breaking Space"), TXT("Non Breaking Space"),
         TXT("Café Note", naming_try=True, note="NFD form"), TXT("Café Note", note="NFC form"),
