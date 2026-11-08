@@ -231,7 +231,7 @@ def phase_schema(api, cfg, schema, log):
             for f in t["fields"]:
                 if f.get("link") or f.get("calc") or f["name"] in have:
                     continue
-                if f["api"] in ("try",) or f.get("naming_try"):
+                if f["api"] in ("ok", "try") or f.get("naming_try"):   # also re-creates plain fields deleted later
                     st, js = api.call("POST", "%s/v0/meta/bases/%s/tables/%s/fields" % (API, bid, lt["id"]), bid, field_payload(f))
                     if st != 200:
                         _fail(log, {"base": label, "table": t["name"], "field": f["name"], "type": f["type"], "why": err_text(js)})
